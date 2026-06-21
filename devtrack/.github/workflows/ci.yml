@@ -1,0 +1,86 @@
+name: CI/CD
+
+# Runs on every PR (test only) and on every push to main (test + build + deploy)
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    # Spin up a real Postgres instance for the test suite to run against
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: devtrack_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/devtrack_test
+      JWT_ACCESS_SECRET: ci-test-access-secret
+      JWT_REFRESH_SECRET: ci-test-refresh-secret
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build TypeScript
+        run: npm run build
+
+  deploy:
+    name: Deploy to production
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Render and Railway both support "deploy hook" URLs — a POST request
+      # to a secret URL triggers a new deployment. Store the URL in
+      # GitHub repo Settings -> Secrets -> Actions as RENDER_DEPLOY_HOOK.
+      - name: Trigger backend deploy (Render)
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+      # Vercel deploys automatically on push if the repo is connected via
+      # the Vercel dashboard, so no extra step is usually needed for frontend.
+      # This step is here for reference if you deploy frontend manually instead.
+      # - name: Trigger frontend deploy (Vercel)
+      #   run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
