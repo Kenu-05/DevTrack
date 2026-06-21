@@ -6,6 +6,8 @@ import { Server } from "socket.io";
 
 import authRoutes from "./routes/auth";
 import taskRoutes from "./routes/tasks";
+import teamRoutes from "./routes/teams";
+import projectRoutes from "./routes/projects";
 
 dotenv.config();
 
@@ -23,6 +25,8 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 app.use("/auth", authRoutes);
 app.use("/tasks", taskRoutes);
+app.use("/teams", teamRoutes);
+app.use("/projects", projectRoutes);
 
 // Socket.io connection handling — clients join a "project:<id>" room
 // to receive live task updates for that project.
