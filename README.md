@@ -1,3 +1,4 @@
+ HEAD
 # DevTrack — Team Task & Deployment Tracker
 
 A full-stack team task management app built to demonstrate production-grade engineering practices: authentication, real-time updates, automated testing, and CI/CD.
@@ -86,3 +87,6 @@ Use a free Postgres instance from [Neon](https://neon.tech) or [Supabase](https:
 ## Why this project
 
 Most student projects stop at CRUD. This one is structured so the *DevOps layer* (CI/CD, Docker, automated tests) is a core deliverable, not an afterthought — this is exactly what separates a junior portfolio project from an associate-level one in interviews.
+
+# DevTrack
+ refs/rewritten/merge-remote-changes
